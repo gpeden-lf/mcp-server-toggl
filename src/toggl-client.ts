@@ -51,6 +51,27 @@ export class TogglClient {
     });
   }
 
+  /** POST helper for the main Toggl API v9 */
+  private async post(path: string, body: Record<string, any>): Promise<any> {
+    return this.request(`${TOGGL_API_BASE}${path}`, {
+      method: "POST",
+      body: JSON.stringify(body),
+    });
+  }
+
+  /** PUT helper for the main Toggl API v9 */
+  private async put(path: string, body: Record<string, any>): Promise<any> {
+    return this.request(`${TOGGL_API_BASE}${path}`, {
+      method: "PUT",
+      body: JSON.stringify(body),
+    });
+  }
+
+  /** DELETE helper for the main Toggl API v9 */
+  private async delete(path: string): Promise<any> {
+    return this.request(`${TOGGL_API_BASE}${path}`, { method: "DELETE" });
+  }
+
   // ── Workspaces ──────────────────────────────────────────────
 
   async listWorkspaces(): Promise<any[]> {
@@ -99,10 +120,48 @@ export class TogglClient {
     return this.get(`/workspaces/${workspaceId}/projects/${projectId}`);
   }
 
+  async createProject(workspaceId: number, body: {
+    name: string;
+    client_id?: number;
+    active?: boolean;
+    billable?: boolean;
+    color?: string;
+    is_private?: boolean;
+  }): Promise<any> {
+    return this.post(`/workspaces/${workspaceId}/projects`, body);
+  }
+
+  async updateProject(workspaceId: number, projectId: number, body: {
+    name?: string;
+    client_id?: number;
+    active?: boolean;
+    billable?: boolean;
+    color?: string;
+    is_private?: boolean;
+  }): Promise<any> {
+    return this.put(`/workspaces/${workspaceId}/projects/${projectId}`, body);
+  }
+
+  async deleteProject(workspaceId: number, projectId: number): Promise<null> {
+    return this.delete(`/workspaces/${workspaceId}/projects/${projectId}`);
+  }
+
   // ── Clients ─────────────────────────────────────────────────
 
   async listClients(workspaceId: number): Promise<any[]> {
     return this.get(`/workspaces/${workspaceId}/clients`);
+  }
+
+  async createClient(workspaceId: number, body: { name: string; notes?: string }): Promise<any> {
+    return this.post(`/workspaces/${workspaceId}/clients`, body);
+  }
+
+  async updateClient(workspaceId: number, clientId: number, body: { name?: string; notes?: string }): Promise<any> {
+    return this.put(`/workspaces/${workspaceId}/clients/${clientId}`, body);
+  }
+
+  async deleteClient(workspaceId: number, clientId: number): Promise<null> {
+    return this.delete(`/workspaces/${workspaceId}/clients/${clientId}`);
   }
 
   // ── Users ───────────────────────────────────────────────────
@@ -117,6 +176,82 @@ export class TogglClient {
     return this.get(
       `/workspaces/${workspaceId}/projects/${projectId}/tasks`
     );
+  }
+
+  async createTask(workspaceId: number, projectId: number, body: {
+    name: string;
+    active?: boolean;
+    estimated_seconds?: number;
+    user_id?: number;
+  }): Promise<any> {
+    return this.post(`/workspaces/${workspaceId}/projects/${projectId}/tasks`, body);
+  }
+
+  async updateTask(workspaceId: number, projectId: number, taskId: number, body: {
+    name?: string;
+    active?: boolean;
+    estimated_seconds?: number;
+    user_id?: number;
+  }): Promise<any> {
+    return this.put(`/workspaces/${workspaceId}/projects/${projectId}/tasks/${taskId}`, body);
+  }
+
+  async deleteTask(workspaceId: number, projectId: number, taskId: number): Promise<null> {
+    return this.delete(`/workspaces/${workspaceId}/projects/${projectId}/tasks/${taskId}`);
+  }
+
+  // ── Project Users (membership) ─────────────────────────────
+
+  async listProjectUsers(workspaceId: number, projectId: number): Promise<any[]> {
+    return this.get(`/workspaces/${workspaceId}/project_users`, {
+      project_id: String(projectId),
+    });
+  }
+
+  async addProjectUser(workspaceId: number, projectId: number, userId: number, manager = false): Promise<any> {
+    return this.post(`/workspaces/${workspaceId}/project_users`, {
+      project_id: projectId,
+      user_id: userId,
+      manager,
+    });
+  }
+
+  async removeProjectUser(workspaceId: number, projectUserId: number): Promise<null> {
+    return this.delete(`/workspaces/${workspaceId}/project_users/${projectUserId}`);
+  }
+
+  async addUserToClientProjects(workspaceId: number, clientId: number, userId: number, manager = false): Promise<any[]> {
+    const projects = await this.listProjects(workspaceId, { active: true, client_ids: [clientId] });
+    const results = [];
+    for (const project of projects) {
+      try {
+        const result = await this.addProjectUser(workspaceId, project.id, userId, manager);
+        results.push({ project_id: project.id, project_name: project.name, result });
+      } catch (err) {
+        results.push({ project_id: project.id, project_name: project.name, error: String(err) });
+      }
+    }
+    return results;
+  }
+
+  async removeUserFromClientProjects(workspaceId: number, clientId: number, userId: number): Promise<any[]> {
+    const projects = await this.listProjects(workspaceId, { client_ids: [clientId] });
+    const results = [];
+    for (const project of projects) {
+      try {
+        const projectUsers: any[] = await this.listProjectUsers(workspaceId, project.id);
+        const membership = projectUsers.find((pu) => pu.user_id === userId);
+        if (!membership) {
+          results.push({ project_id: project.id, project_name: project.name, skipped: "user not a member" });
+          continue;
+        }
+        await this.removeProjectUser(workspaceId, membership.id);
+        results.push({ project_id: project.id, project_name: project.name, removed: true });
+      } catch (err) {
+        results.push({ project_id: project.id, project_name: project.name, error: String(err) });
+      }
+    }
+    return results;
   }
 
   // ── Reports: Search Time Entries (cursor-paginated) ────────
