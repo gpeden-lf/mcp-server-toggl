@@ -33,7 +33,27 @@ Add this to your Claude Desktop config file:
 }
 ```
 
-### 3. Build from Source (optional)
+### 3. Configure GitHub Copilot
+
+Edit `~/.copilot/mcp-config.json`:
+
+```json
+{
+  "mcpServers": {
+    "toggl": {
+      "command": "node",
+      "args": ["/path/to/mcp-server-toggl/dist/index.js"],
+      "env": {
+        "TOGGL_API_TOKEN": "your-api-token-here"
+      }
+    }
+  }
+}
+```
+
+Restart Copilot after saving.
+
+### 4. Build from Source (optional)
 
 ```bash
 git clone https://github.com/gpeden-lf/mcp-server-toggl.git
