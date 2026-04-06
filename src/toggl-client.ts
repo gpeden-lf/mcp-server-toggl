@@ -203,9 +203,10 @@ export class TogglClient {
   // ── Project Users (membership) ─────────────────────────────
 
   async listProjectUsers(workspaceId: number, projectId: number): Promise<any[]> {
-    return this.get(`/workspaces/${workspaceId}/project_users`, {
-      project_id: String(projectId),
-    });
+    // The API ignores project_id as a filter and returns all workspace project_users,
+    // so we filter client-side.
+    const all = await this.get(`/workspaces/${workspaceId}/project_users`);
+    return all.filter((pu: any) => pu.project_id === projectId);
   }
 
   async addProjectUser(workspaceId: number, projectId: number, userId: number, manager = false): Promise<any> {
@@ -240,7 +241,7 @@ export class TogglClient {
     for (const project of projects) {
       try {
         const projectUsers: any[] = await this.listProjectUsers(workspaceId, project.id);
-        const membership = projectUsers.find((pu) => pu.user_id === userId);
+        const membership = projectUsers.find((pu) => pu.user_id === userId && pu.project_id === project.id);
         if (!membership) {
           results.push({ project_id: project.id, project_name: project.name, skipped: "user not a member" });
           continue;
