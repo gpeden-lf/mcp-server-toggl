@@ -92,7 +92,7 @@ Then point your MCP client at the built server:
 | `toggl_delete_client` | Delete a client |
 | `toggl_list_projects` | List projects (auto-paginated, filterable by active status and client) |
 | `toggl_get_project` | Get details for a single project |
-| `toggl_create_project` | Create a new project |
+| `toggl_create_project` | Create a new project, optionally from a template using `template_id` |
 | `toggl_update_project` | Update an existing project |
 | `toggl_delete_project` | Delete a project |
 | `toggl_list_tasks` | List tasks within a project |
@@ -117,6 +117,28 @@ Then point your MCP client at the built server:
 | `toggl_search_time_entries` | Search time entries across all team members. Supports filtering by project, client, user, task, and description. Auto-paginates and enriches results with names. |
 | `toggl_get_summary_report` | Get aggregated time totals grouped by users, projects, or clients. Supports sub-grouping for breakdowns like "each user's time by project." |
 
+### Creating a Project from a Template
+
+Pass the source project's `template_id` to `toggl_create_project`, along with
+`workspace_id`, the new project's `name`, and the destination `client_id`.
+Omit `template_id` for ordinary project creation.
+
+```json
+{
+  "workspace_id": 12345,
+  "name": "Systems & Tools",
+  "client_id": 67890,
+  "template_id": 11111,
+  "is_private": true,
+  "billable": true
+}
+```
+
+Toggl applies the template server-side. Verify the resulting tasks and settings
+before relying on the new project. Add any additional destination team members
+separately with `toggl_add_user_to_project`; template creation does not replace
+that membership step.
+
 ## Example Prompts
 
 - "Add [name] to all [Client] projects in Toggl"
@@ -136,4 +158,3 @@ Then point your MCP client at the built server:
 ## License
 
 MIT
-

@@ -46,13 +46,18 @@ export const getProjectTool: Tool = {
 
 export const createProjectTool: Tool = {
   name: "toggl_create_project",
-  description: "Create a new project in a workspace.",
+  description: "Create a new project in a workspace, optionally from an existing project template.",
   inputSchema: {
     type: "object",
     properties: {
       workspace_id: { type: "number", description: "The workspace ID" },
       name: { type: "string", description: "Project name" },
       client_id: { type: "number", description: "Client ID to associate with the project" },
+      template_id: {
+        type: "integer",
+        minimum: 1,
+        description: "Optional source project template ID. The new project name and destination client must still be supplied explicitly.",
+      },
       active: { type: "boolean", description: "Whether the project is active (default: true)" },
       billable: { type: "boolean", description: "Whether the project is billable" },
       color: { type: "string", description: "Project color hex code (e.g. #e36a00)" },

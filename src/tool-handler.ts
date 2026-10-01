@@ -213,9 +213,10 @@ export function tool_handler(
         }
 
         case "toggl_create_project": {
-          const { workspace_id, name, client_id, active, billable, color, is_private } = args;
-          const body: any = { name };
+          const { workspace_id, name, client_id, template_id, active, billable, color, is_private } = args;
+          const body: Parameters<TogglClient["createProject"]>[1] = { name };
           if (client_id !== undefined) body.client_id = client_id;
+          if (template_id !== undefined) body.template_id = template_id;
           if (active !== undefined) body.active = active;
           if (billable !== undefined) body.billable = billable;
           if (color !== undefined) body.color = color;
