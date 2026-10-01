@@ -123,6 +123,7 @@ export class TogglClient {
   async createProject(workspaceId: number, body: {
     name: string;
     client_id?: number;
+    template_id?: number;
     active?: boolean;
     billable?: boolean;
     color?: string;
